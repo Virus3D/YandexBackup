@@ -1,0 +1,145 @@
+[19-May-2026 02:16:34 UTC] PHP Fatal error:  A void method must not return a value in /var/www/YandexBackup/src/YandexDisk.php on line 82
+[19-May-2026 02:16:34 UTC] PHP Stack trace:
+[19-May-2026 02:16:34 UTC] PHP   1. {main}() /var/www/YandexBackup/backup.php:0
+[19-May-2026 02:16:34 UTC] PHP   2. Composer\Autoload\ClassLoader->loadClass($class = 'App\\Backup\\YandexDisk') /var/www/YandexBackup/backup.php:37
+[19-May-2026 02:16:34 UTC] PHP   3. {closure:/var/www/YandexBackup/vendor/composer/ClassLoader.php:575-577}($file = '/var/www/YandexBackup/vendor/composer/../../src/YandexDisk.php') /var/www/YandexBackup/vendor/composer/ClassLoader.php:427
+[19-May-2026 02:17:43 UTC] (1968872) [warning] Disk info failed. Context: {"code":401,"result":{"error":"UnauthorizedError","description":"Unauthorized","message":"Не авторизован."}}
+[19-May-2026 02:17:43 UTC] (1968872) [error] Не удалось получить информацию о Диске
+[19-May-2026 02:57:41 UTC] PHP Fatal error:  Uncaught RuntimeException: Access token is not set. in /var/www/YandexBackup/src/HttpClient.php:56
+Stack trace:
+#0 /var/www/YandexBackup/src/HttpClient.php(119): App\Backup\HttpClient->request()
+#1 /var/www/YandexBackup/src/YandexDisk.php(22): App\Backup\HttpClient->get()
+#2 /var/www/YandexBackup/src/YandexDiskBackup.php(29): App\Backup\YandexDisk->info()
+#3 /var/www/YandexBackup/backup.php(51): App\Backup\YandexDiskBackup->run()
+#4 {main}
+  thrown in /var/www/YandexBackup/src/HttpClient.php on line 56
+[19-May-2026 03:47:14 UTC] (1978542) [warning] Disk info failed. Context: {"code":401,"result":{"error":"UnauthorizedError","description":"Unauthorized","message":"Не авторизован."}}
+[19-May-2026 03:47:14 UTC] (1978542) [error] Не удалось получить информацию о Диске
+[19-May-2026 04:25:31 UTC] (1983197) [info] Логин НПО ВЭСТ
+[19-May-2026 04:25:31 UTC] (1983197) [info] Всего 5 GB
+[19-May-2026 04:25:31 UTC] (1983197) [info] Использовано 38.95 MB
+[19-May-2026 04:25:31 UTC] (1983197) [info] Начат бекап проекта garden.npowest.ru
+[19-May-2026 04:25:32 UTC] (1983197) [error] Не удалось создать папку на Диске: app:/Backups/garden.npowest.ru
+[19-May-2026 04:30:48 UTC] (1983859) [info] Логин НПО ВЭСТ
+[19-May-2026 04:30:48 UTC] (1983859) [info] Всего 5 GB
+[19-May-2026 04:30:48 UTC] (1983859) [info] Использовано 38.95 MB
+[19-May-2026 04:30:48 UTC] (1983859) [info] Начат бекап проекта garden.npowest.ru
+[19-May-2026 04:30:50 UTC] (1983859) [error] Не удалось создать папку на Диске: app:/NpoWest BackUp/garden.npowest.ru
+[19-May-2026 04:33:50 UTC] (1984212) [info] Логин НПО ВЭСТ
+[19-May-2026 04:33:50 UTC] (1984212) [info] Всего 5 GB
+[19-May-2026 04:33:50 UTC] (1984212) [info] Использовано 38.95 MB
+[19-May-2026 04:33:50 UTC] (1984212) [info] Начат бекап проекта garden.npowest.ru
+[19-May-2026 04:33:51 UTC] (1984212) [warning] Нет файлов для загрузки в dumps/
+[19-May-2026 04:33:51 UTC] (1984212) [info] Бекап проекта garden.npowest.ru завершён
+[19-May-2026 04:34:49 UTC] (1984349) [info] Логин НПО ВЭСТ
+[19-May-2026 04:34:49 UTC] (1984349) [info] Всего 5 GB
+[19-May-2026 04:34:49 UTC] (1984349) [info] Использовано 38.95 MB
+[19-May-2026 04:34:49 UTC] (1984349) [info] Начат бекап проекта garden.npowest.ru
+[19-May-2026 04:34:50 UTC] (1984349) [info] Загрузка test.sql.gz
+[19-May-2026 04:34:50 UTC] (1984349) [error] Failed to get upload URL. Context: {"code":404,"result":{"error":"DiskNotFoundError","description":"Resource not found.","message":"Не удалось найти запрошенный ресурс."}}
+[19-May-2026 04:34:50 UTC] (1984349) [error] Ошибка загрузки test.sql.gz
+[19-May-2026 04:34:50 UTC] (1984349) [info] Бекап проекта garden.npowest.ru завершён
+[19-May-2026 04:36:43 UTC] (1984599) [info] Логин НПО ВЭСТ
+[19-May-2026 04:36:43 UTC] (1984599) [info] Всего 5 GB
+[19-May-2026 04:36:43 UTC] (1984599) [info] Использовано 38.95 MB
+[19-May-2026 04:36:43 UTC] (1984599) [info] Начат бекап проекта garden.npowest.ru
+[19-May-2026 04:36:43 UTC] (1984599) [error] Не удалось создать папку на Диске: app:/NpoWest BackUp
+[19-May-2026 04:42:39 UTC] (1985389) [info] Логин НПО ВЭСТ
+[19-May-2026 04:42:39 UTC] (1985389) [info] Всего 5 GB
+[19-May-2026 04:42:39 UTC] (1985389) [info] Использовано 38.95 MB
+[19-May-2026 04:42:39 UTC] (1985389) [info] Начат бекап проекта garden.npowest.ru
+[19-May-2026 04:42:57 UTC] (1985461) [info] Логин НПО ВЭСТ
+[19-May-2026 04:42:57 UTC] (1985461) [info] Всего 5 GB
+[19-May-2026 04:42:57 UTC] (1985461) [info] Использовано 38.95 MB
+[19-May-2026 04:42:57 UTC] (1985461) [info] Начат бекап проекта garden.npowest.ru
+[19-May-2026 04:45:11 UTC] (1985755) [info] Логин НПО ВЭСТ
+[19-May-2026 04:45:11 UTC] (1985755) [info] Всего 5 GB
+[19-May-2026 04:45:11 UTC] (1985755) [info] Использовано 38.95 MB
+[19-May-2026 04:45:11 UTC] (1985755) [info] Начат бекап проекта garden.npowest.ru
+[19-May-2026 04:45:12 UTC] (1985755) [info] Загрузка test.sql.gz
+[19-May-2026 04:45:13 UTC] (1985755) [info] Файл test.sql.gz успешно загружен и удалён локально
+[19-May-2026 04:45:13 UTC] (1985755) [info] Бекап проекта garden.npowest.ru завершён
+[19-May-2026 05:25:11 UTC] PHP Fatal error:  Uncaught TypeError: App\Backup\BackupBD::__construct(): Argument #2 ($databases) must be of type array, string given, called in /var/www/YandexBackup/backup.php on line 49 and defined in /var/www/YandexBackup/src/BackupBD.php:34
+Stack trace:
+#0 /var/www/YandexBackup/backup.php(49): App\Backup\BackupBD->__construct()
+#1 {main}
+  thrown in /var/www/YandexBackup/src/BackupBD.php on line 34
+[19-May-2026 05:26:31 UTC] (1991032) [info] === Dump started at 2026-05-19T05:26:31+00:00 ===
+[19-May-2026 05:26:31 UTC] (1991032) [info] [DB:garden] Creating dump...
+[19-May-2026 05:26:31 UTC] (1991032) [info] [DB:garden] Dump created.
+[19-May-2026 05:26:31 UTC] (1991032) [info] [DB:garden_dev] Creating dump...
+[19-May-2026 05:27:13 UTC] (1991032) [info] [DB:garden_dev] Dump created.
+[19-May-2026 05:27:13 UTC] (1991032) [info] === Dump finished at 2026-05-19T05:27:13+00:00 ===
+[19-May-2026 05:27:13 UTC] (1991032) [info] Логин НПО ВЭСТ
+[19-May-2026 05:27:13 UTC] (1991032) [info] Всего 5 GB
+[19-May-2026 05:27:13 UTC] (1991032) [info] Использовано 38.95 MB
+[19-May-2026 05:27:13 UTC] (1991032) [info] Начат бекап проекта garden.npowest.ru
+[19-May-2026 05:27:14 UTC] (1991032) [info] Загрузка garden_2026-05-19_05-26-31.sql.gz
+[19-May-2026 05:27:17 UTC] (1991032) [info] Файл garden_2026-05-19_05-26-31.sql.gz успешно загружен и удалён локально
+[19-May-2026 05:27:17 UTC] (1991032) [info] Загрузка garden_dev_2026-05-19_05-26-31.sql.gz
+[19-May-2026 05:27:55 UTC] (1991032) [info] Файл garden_dev_2026-05-19_05-26-31.sql.gz успешно загружен и удалён локально
+[19-May-2026 05:27:55 UTC] (1991032) [info] Бекап проекта garden.npowest.ru завершён
+[19-May-2026 05:35:26 UTC] (1992125) [info] === Dump started at 2026-05-19T05:35:26+00:00 ===
+[19-May-2026 05:35:26 UTC] (1992125) [info] [DB:garden] Creating dump...
+[19-May-2026 05:35:26 UTC] (1992125) [info] [DB:garden] Dump created.
+[19-May-2026 05:35:26 UTC] (1992125) [info] [DB:garden_dev] Creating dump...
+[19-May-2026 05:35:26 UTC] (1992125) [info] [DB:garden_dev] Dump created.
+[19-May-2026 05:35:26 UTC] (1992125) [info] === Dump finished at 2026-05-19T05:35:26+00:00 ===
+[19-May-2026 05:35:27 UTC] (1992125) [info] Логин НПО ВЭСТ
+[19-May-2026 05:35:27 UTC] (1992125) [info] Всего 5 GB
+[19-May-2026 05:35:27 UTC] (1992125) [info] Использовано 43.46 MB
+[19-May-2026 05:35:27 UTC] (1992125) [info] Начат бекап проекта garden.npowest.ru
+[19-May-2026 05:35:28 UTC] (1992125) [info] Загрузка garden_2026-05-19_05-35-26.sql.gz
+[19-May-2026 05:35:29 UTC] (1992125) [info] Файл garden_2026-05-19_05-35-26.sql.gz успешно загружен и удалён локально
+[19-May-2026 05:35:29 UTC] (1992125) [info] Загрузка garden_dev_2026-05-19_05-35-26.sql.gz
+[19-May-2026 05:35:30 UTC] (1992125) [info] Файл garden_dev_2026-05-19_05-35-26.sql.gz успешно загружен и удалён локально
+[19-May-2026 05:35:30 UTC] (1992125) [info] Бекап проекта garden.npowest.ru завершён
+[19-May-2026 05:43:29 UTC] (1993140) [info] === Dump started at 2026-05-19T05:43:29+00:00 ===
+[19-May-2026 05:43:29 UTC] (1993140) [info] [DB:garden] Creating dump...
+[19-May-2026 05:43:29 UTC] (1993140) [info] [DB:garden] Dump created.
+[19-May-2026 05:43:29 UTC] (1993140) [info] [DB:garden_dev] Creating dump...
+[19-May-2026 05:44:13 UTC] (1993140) [info] [DB:garden_dev] Dump created.
+[19-May-2026 05:44:13 UTC] (1993140) [info] === Dump finished at 2026-05-19T05:44:13+00:00 ===
+[19-May-2026 05:44:13 UTC] (1993140) [info] Логин НПО ВЭСТ
+[19-May-2026 05:44:13 UTC] (1993140) [info] Всего 5 GB
+[19-May-2026 05:44:13 UTC] (1993140) [info] Использовано 43.46 MB
+[19-May-2026 05:44:13 UTC] (1993140) [info] Начат бекап проекта garden.npowest.ru
+[19-May-2026 05:44:14 UTC] (1993140) [info] Загрузка garden_2026-05-19_05-43-29.sql.gz
+[19-May-2026 05:44:16 UTC] (1993140) [info] Файл garden_2026-05-19_05-43-29.sql.gz успешно загружен и удалён локально
+[19-May-2026 05:44:16 UTC] (1993140) [info] Загрузка garden_dev_2026-05-19_05-43-29.sql.gz
+[19-May-2026 05:44:53 UTC] (1993140) [info] Файл garden_dev_2026-05-19_05-43-29.sql.gz успешно загружен и удалён локально
+[19-May-2026 05:44:53 UTC] (1993140) [info] Бекап проекта garden.npowest.ru завершён
+[19-May-2026 05:45:46 UTC] (1993488) [info] === Dump started at 2026-05-19T05:45:46+00:00 ===
+[19-May-2026 05:45:46 UTC] (1993488) [info] [DB:garden] Creating dump...
+[19-May-2026 05:45:46 UTC] (1993488) [info] [DB:garden] Dump created.
+[19-May-2026 05:45:46 UTC] (1993488) [info] [DB:garden_dev] Creating dump...
+[19-May-2026 05:46:29 UTC] (1993488) [info] [DB:garden_dev] Dump created.
+[19-May-2026 05:46:29 UTC] (1993488) [info] === Dump finished at 2026-05-19T05:46:29+00:00 ===
+[19-May-2026 05:46:30 UTC] (1993488) [info] Логин НПО ВЭСТ
+[19-May-2026 05:46:30 UTC] (1993488) [info] Всего 5 GB
+[19-May-2026 05:46:30 UTC] (1993488) [info] Использовано 47.96 MB
+[19-May-2026 05:46:30 UTC] (1993488) [info] Начат бекап проекта garden.npowest.ru
+[19-May-2026 05:46:31 UTC] (1993488) [info] Удаление старого бекапа: garden_dev_2026-05-19_05-26-31.sql.gz
+[19-May-2026 05:46:32 UTC] (1993488) [info] Удаление старого бекапа: garden_2026-05-19_05-26-31.sql.gz
+[19-May-2026 05:46:33 UTC] (1993488) [info] Загрузка garden_2026-05-19_05-45-46.sql.gz
+[19-May-2026 05:46:34 UTC] (1993488) [info] Файл garden_2026-05-19_05-45-46.sql.gz успешно загружен и удалён локально
+[19-May-2026 05:46:34 UTC] (1993488) [info] Загрузка garden_dev_2026-05-19_05-45-46.sql.gz
+[19-May-2026 05:47:11 UTC] (1993488) [info] Файл garden_dev_2026-05-19_05-45-46.sql.gz успешно загружен и удалён локально
+[19-May-2026 05:47:11 UTC] (1993488) [info] Бекап проекта garden.npowest.ru завершён
+[19-May-2026 05:54:00 UTC] (1994901) [info] === Dump started at 2026-05-19T05:54:00+00:00 ===
+[19-May-2026 05:54:00 UTC] (1994901) [info] [DB:garden] Creating dump...
+[19-May-2026 05:54:00 UTC] (1994901) [info] [DB:garden] Dump created.
+[19-May-2026 05:54:00 UTC] (1994901) [info] [DB:garden_dev] Creating dump...
+[19-May-2026 05:54:35 UTC] (1994901) [info] [DB:garden_dev] Dump created.
+[19-May-2026 05:54:35 UTC] (1994901) [info] === Dump finished at 2026-05-19T05:54:35+00:00 ===
+[19-May-2026 05:54:35 UTC] (1994901) [info] Логин НПО ВЭСТ
+[19-May-2026 05:54:35 UTC] (1994901) [info] Всего 5 GB
+[19-May-2026 05:54:35 UTC] (1994901) [info] Использовано 47.96 MB
+[19-May-2026 05:54:35 UTC] (1994901) [info] Начат бекап проекта garden.npowest.ru
+[19-May-2026 05:54:36 UTC] (1994901) [info] Удаление старого бекапа: garden_dev_2026-05-19_05-35-26.sql.gz
+[19-May-2026 05:54:37 UTC] (1994901) [info] Удаление старого бекапа: garden_2026-05-19_05-35-26.sql.gz
+[19-May-2026 05:54:38 UTC] (1994901) [info] Загрузка garden_2026-05-19_05-54-00.sql.gz
+[19-May-2026 05:54:41 UTC] (1994901) [info] Файл garden_2026-05-19_05-54-00.sql.gz успешно загружен и удалён локально
+[19-May-2026 05:54:41 UTC] (1994901) [info] Загрузка garden_dev_2026-05-19_05-54-00.sql.gz
+[19-May-2026 05:55:19 UTC] (1994901) [info] Файл garden_dev_2026-05-19_05-54-00.sql.gz успешно загружен и удалён локально
+[19-May-2026 05:55:19 UTC] (1994901) [info] Бекап проекта garden.npowest.ru завершён
