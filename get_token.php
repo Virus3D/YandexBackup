@@ -23,7 +23,11 @@ $clientId     = $_ENV['YANDEX_CLIENT_ID'];
 $clientSecret = $_ENV['YANDEX_CLIENT_SECRET'];
 $tokenFile    = $_ENV['YANDEX_TOKEN_FILE'];
 
+$deviceId    = $_ENV['YANDEX_DEVICE_ID'] ?? null;
+
 $oauth = new YandexOAuth($clientId, $clientSecret, $tokenFile);
+
+$oauth->setDeviceId($deviceId);
 
 // Получаем ссылку и просим пользователя открыть её.
 echo "Откройте ссылку в браузере:\n";

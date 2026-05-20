@@ -67,9 +67,9 @@ final class YandexOAuth
     /**
      * Задаёт идентификатор устройства для более точного трекинга сессий Яндексом.
      *
-     * @param string $deviceId Уникальная строка, идентифицирующая устройство/сервер
+     * @param string|null $deviceId Уникальная строка, идентифицирующая устройство/сервер
      */
-    public function setDeviceId(string $deviceId): void
+    public function setDeviceId(?string $deviceId): void
     {
         $this->deviceId = $deviceId;
     }// end setDeviceId()

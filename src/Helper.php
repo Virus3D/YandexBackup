@@ -43,4 +43,21 @@ class Helper
             'unit'  => 'B',
         ];
     }// end formatFileSize()
+
+    /**
+     * Генерирует UUID версии 4 (случайный).
+     *
+     * @return string UUID в формате xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+     */
+    public static function generateUuidV4(): string
+    {
+        $data = random_bytes(16);
+
+        // Устанавливаем версию 4 (биты 12-15).
+        $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+        // Устанавливаем вариант RFC 4122 (биты 6-7).
+        $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+    }// end generateUuidV4()
 }// end class
