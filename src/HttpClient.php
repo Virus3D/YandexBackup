@@ -164,20 +164,38 @@ class HttpClient
             throw new RuntimeException("Cannot open file: {$localPath}");
         }
 
-        $options = [
-            CURLOPT_PUT        => true,
-            CURLOPT_INFILE     => $fp,
-            CURLOPT_INFILESIZE => $fileSize,
-            CURLOPT_HTTPHEADER => [
-                'Authorization: OAuth ' . $this->token,
-                'Content-Type: application/octet-stream',
-            ],
-            CURLOPT_TIMEOUT    => max(1800, (int) ceil($fileSize / (512 * 1024))),
-        ];
+        // Динамический таймаут: не менее 30 минут, примерно по 512 KB/s.
+        $timeout = max(1800, (int) ceil($fileSize / (512 * 1024)));
 
-        $result = $this->request('PUT', $uploadUrl, $options);
+        $ch = curl_init($uploadUrl);
+        curl_setopt_array(
+            $ch,
+            [
+                CURLOPT_PUT            => true,
+                CURLOPT_INFILE         => $fp,
+                CURLOPT_INFILESIZE     => $fileSize,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER     => [
+                    'Authorization: OAuth ' . $this->token,
+                    'Content-Type: application/octet-stream',
+                ],
+                CURLOPT_TIMEOUT        => $timeout,
+            ]
+        );
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         fclose($fp);
-        return $result;
+
+        if ($curlError) {
+            throw new RuntimeException('cURL error: ' . $curlError);
+        }
+
+        return [
+            'code'   => $httpCode,
+            'result' => json_decode($response, true),
+        ];
     }// end simpleUpload()
 
     /**
@@ -188,31 +206,25 @@ class HttpClient
      */
     private function resumableUpload(string $uploadUrl, string $localPath, int $fileSize): array
     {
-        // Получаем размер уже загруженной части (если сессия возобновляется).
-        $offset = $this->getResumableOffset($uploadUrl, $fileSize);
-        if ($offset === false) {
-            throw new RuntimeException('Не удалось получить статус загрузки.');
-        }
-
         $fp = fopen($localPath, 'rb');
         if (!$fp) {
             throw new RuntimeException("Cannot open file: {$localPath}");
         }
 
-        fseek($fp, $offset);
-
-        $totalChunks = (int) ceil(($fileSize - $offset) / self::CHUNK_SIZE);
+        $offset = 0;
+        $totalChunks = (int) ceil($fileSize / self::CHUNK_SIZE);
         $chunkIndex = 0;
 
         while ($offset < $fileSize) {
-            $chunk = fread($fp, self::CHUNK_SIZE);
+            $chunkSize = min(self::CHUNK_SIZE, $fileSize - $offset);
+            fseek($fp, $offset);
+            $chunk = fread($fp, $chunkSize);
             if ($chunk === false) {
                 fclose($fp);
-                throw new RuntimeException('Failed to read chunk from local file.');
+                throw new RuntimeException("Failed to read chunk at offset {$offset}");
             }
 
-            $chunkSize = strlen($chunk);
-            $endByte = min($offset + $chunkSize - 1, $fileSize - 1);
+            $endByte = $offset + $chunkSize - 1;
             $rangeHeader = "bytes {$offset}-{$endByte}/{$fileSize}";
 
             $this->logger->info(
@@ -230,13 +242,9 @@ class HttpClient
             while (!$success && $retries < self::MAX_RETRIES) {
                 if ($retries > 0) {
                     $this->logger->warning("Повторная попытка {$retries}/" . self::MAX_RETRIES);
-                    // При повторе обновляем offset (сервер мог принять часть).
-                    $offset = $this->getResumableOffset($uploadUrl, $fileSize);
+                    // Перед повтором переоткрываем файл и перемещаем указатель.
                     fseek($fp, $offset);
-                    $chunk = fread($fp, self::CHUNK_SIZE);
-                    $chunkSize = strlen($chunk);
-                    $endByte = min($offset + $chunkSize - 1, $fileSize - 1);
-                    $rangeHeader = "bytes {$offset}-{$endByte}/{$fileSize}";
+                    $chunk = fread($fp, $chunkSize);
                 }
 
                 $ch2 = curl_init($uploadUrl);
@@ -288,58 +296,10 @@ class HttpClient
         }// end while
 
         fclose($fp);
-        // На всякий случай возвращаем успех (достигли конца файла).
+        // Если цикл завершился без 201, возвращаем успех.
         return [
             'code'   => 201,
             'result' => null,
         ];
     }// end resumableUpload()
-
-    /**
-     * Узнаёт текущий размер загруженной части файла у Яндекса.
-     * Если файл ещё не начали загружать — вернёт 0.
-     */
-    private function getResumableOffset(string $uploadUrl, int $fileSize): int|false
-    {
-        $ch = curl_init($uploadUrl);
-        curl_setopt_array(
-            $ch,
-            [
-                CURLOPT_CUSTOMREQUEST  => 'GET',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_HEADER         => true,
-                CURLOPT_HTTPHEADER     => [
-                    'Authorization: OAuth ' . $this->token,
-                    'Content-Range: bytes */' . $fileSize,
-                ],
-                CURLOPT_TIMEOUT        => 30,
-            ]
-        );
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-
-        if ($httpCode === 200) {
-            // Уже загружен полностью.
-            return $fileSize;
-        }
-
-        if ($httpCode === 202) {
-            $headers = substr($response, 0, $headerSize);
-            if (preg_match('/Content-Range:\s*bytes\s+(\d+)-\d+\/(\d+)/i', $headers, $matches)) {
-                // Следующий байт для загрузки.
-                return (int) $matches[1] + 1;
-            }
-            // Нет заголовка — начинаем с нуля.
-            return 0;
-        }
-
-        if ($httpCode === 404) {
-            return 0;
-        }
-
-        $this->logger->error("Неожиданный ответ при проверке смещения: HTTP {$httpCode}");
-        return false;
-    }// end getResumableOffset()
 }// end class
