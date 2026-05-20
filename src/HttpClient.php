@@ -11,11 +11,17 @@ class HttpClient
 {
     private ?string $token = null;
 
-    private LoggerInterface $logger;
+    // Порог, после которого переключаемся на составную загрузку (байты): 2 GiB.
+    private const RESUMABLE_THRESHOLD = 2 * 1024 * 1024 * 1024;
+    // Размер одной части при составной загрузке (рекомендация Яндекса — кратно 4 MiB): 8 MiB.
+    private const CHUNK_SIZE = 8 * 1024 * 1024;
+    // Максимальное время для загрузки одной части (15 минут).
+    private const CHUNK_TIMEOUT = 900;
+    // Максимальное количество попыток для каждой части.
+    private const MAX_RETRIES = 3;
 
-    public function __construct(LoggerInterface $logger)
+    public function __construct(private readonly LoggerInterface $logger)
     {
-        $this->logger = $logger;
     }// end __construct()
 
     /**
@@ -129,11 +135,29 @@ class HttpClient
     }// end put()
 
     /**
-     * Загрузка файла (специальный случай, как у вас type_file)
+     * Загрузка локального файла на URL, полученный от Яндекс.Диска.
+     * Автоматически выбирает стратегию: простая PUT или составная (resumable).
      *
      * @return array{code: int, result: mixed}
      */
     public function uploadFile(string $uploadUrl, string $localPath): array
+    {
+        $fileSize = filesize($localPath);
+
+        if ($fileSize <= self::RESUMABLE_THRESHOLD) {
+            return $this->simpleUpload($uploadUrl, $localPath, $fileSize);
+        }
+
+        $this->logger->info("Файл большой ({$fileSize} байт), используется составная загрузка.");
+        return $this->resumableUpload($uploadUrl, $localPath, $fileSize);
+    }// end uploadFile()
+
+    /**
+     * Простая загрузка файла одним PUT-запросом.
+     *
+     * @return array{code: int, result: mixed}
+     */
+    private function simpleUpload(string $uploadUrl, string $localPath, int $fileSize): array
     {
         $fp = fopen($localPath, 'rb');
         if (!$fp) {
@@ -143,16 +167,179 @@ class HttpClient
         $options = [
             CURLOPT_PUT        => true,
             CURLOPT_INFILE     => $fp,
-            CURLOPT_INFILESIZE => filesize($localPath),
+            CURLOPT_INFILESIZE => $fileSize,
             CURLOPT_HTTPHEADER => [
                 'Authorization: OAuth ' . $this->token,
                 'Content-Type: application/octet-stream',
             ],
-            CURLOPT_TIMEOUT    => 600,
+            CURLOPT_TIMEOUT    => max(1800, (int) ceil($fileSize / (512 * 1024))),
         ];
 
         $result = $this->request('PUT', $uploadUrl, $options);
         fclose($fp);
         return $result;
-    }// end uploadFile()
+    }// end simpleUpload()
+
+    /**
+     * Составная загрузка (resumable) согласно API Яндекс.Диска.
+     * Делит файл на части и загружает последовательно с докачкой.
+     *
+     * @return array{code: int, result: mixed}
+     */
+    private function resumableUpload(string $uploadUrl, string $localPath, int $fileSize): array
+    {
+        // Получаем размер уже загруженной части (если сессия возобновляется).
+        $offset = $this->getResumableOffset($uploadUrl, $fileSize);
+        if ($offset === false) {
+            throw new RuntimeException('Не удалось получить статус загрузки.');
+        }
+
+        $fp = fopen($localPath, 'rb');
+        if (!$fp) {
+            throw new RuntimeException("Cannot open file: {$localPath}");
+        }
+
+        fseek($fp, $offset);
+
+        $totalChunks = (int) ceil(($fileSize - $offset) / self::CHUNK_SIZE);
+        $chunkIndex = 0;
+
+        while ($offset < $fileSize) {
+            $chunk = fread($fp, self::CHUNK_SIZE);
+            if ($chunk === false) {
+                fclose($fp);
+                throw new RuntimeException('Failed to read chunk from local file.');
+            }
+
+            $chunkSize = strlen($chunk);
+            $endByte = min($offset + $chunkSize - 1, $fileSize - 1);
+            $rangeHeader = "bytes {$offset}-{$endByte}/{$fileSize}";
+
+            $this->logger->info(
+                sprintf(
+                    "Загрузка части %d/%d (bytes %s)...",
+                    ++$chunkIndex,
+                    $totalChunks,
+                    $rangeHeader
+                )
+            );
+
+            $success = false;
+            $retries = 0;
+
+            while (!$success && $retries < self::MAX_RETRIES) {
+                if ($retries > 0) {
+                    $this->logger->warning("Повторная попытка {$retries}/" . self::MAX_RETRIES);
+                    // При повторе обновляем offset (сервер мог принять часть).
+                    $offset = $this->getResumableOffset($uploadUrl, $fileSize);
+                    fseek($fp, $offset);
+                    $chunk = fread($fp, self::CHUNK_SIZE);
+                    $chunkSize = strlen($chunk);
+                    $endByte = min($offset + $chunkSize - 1, $fileSize - 1);
+                    $rangeHeader = "bytes {$offset}-{$endByte}/{$fileSize}";
+                }
+
+                $ch2 = curl_init($uploadUrl);
+                curl_setopt_array(
+                    $ch2,
+                    [
+                        CURLOPT_CUSTOMREQUEST  => 'PUT',
+                        CURLOPT_POSTFIELDS     => $chunk,
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_HTTPHEADER     => [
+                            'Authorization: OAuth ' . $this->token,
+                            'Content-Type: application/octet-stream',
+                            'Content-Length: ' . $chunkSize,
+                            'Content-Range: ' . $rangeHeader,
+                        ],
+                        CURLOPT_TIMEOUT        => self::CHUNK_TIMEOUT,
+                    ]
+                );
+
+                $response = curl_exec($ch2);
+                $httpCode = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+                $curlError = curl_error($ch2);
+
+                if ($curlError) {
+                    $this->logger->error("Ошибка cURL: {$curlError}");
+                } elseif ($httpCode === 201) {
+                    // Файл полностью загружен (последняя часть).
+                    fclose($fp);
+                    return [
+                        'code'   => 201,
+                        'result' => json_decode($response, true),
+                    ];
+                } elseif ($httpCode === 202) {
+                    // Часть принята, продолжаем.
+                    $success = true;
+                } else {
+                    $this->logger->error("HTTP {$httpCode}: " . ($response ?: 'empty'));
+                }
+
+                $retries++;
+            }// end while
+
+            if (!$success) {
+                fclose($fp);
+                throw new RuntimeException("Не удалось загрузить часть после " . self::MAX_RETRIES . " попыток.");
+            }
+
+            $offset += $chunkSize;
+        }// end while
+
+        fclose($fp);
+        // На всякий случай возвращаем успех (достигли конца файла).
+        return [
+            'code'   => 201,
+            'result' => null,
+        ];
+    }// end resumableUpload()
+
+    /**
+     * Узнаёт текущий размер загруженной части файла у Яндекса.
+     * Если файл ещё не начали загружать — вернёт 0.
+     */
+    private function getResumableOffset(string $uploadUrl, int $fileSize): int|false
+    {
+        $ch = curl_init($uploadUrl);
+        curl_setopt_array(
+            $ch,
+            [
+                CURLOPT_CUSTOMREQUEST  => 'GET',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HEADER         => true,
+                CURLOPT_HTTPHEADER     => [
+                    'Authorization: OAuth ' . $this->token,
+                    'Content-Range: bytes */' . $fileSize,
+                ],
+                CURLOPT_TIMEOUT        => 30,
+            ]
+        );
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+
+        if ($httpCode === 200) {
+            // Уже загружен полностью.
+            return $fileSize;
+        }
+
+        if ($httpCode === 202) {
+            $headers = substr($response, 0, $headerSize);
+            if (preg_match('/Content-Range:\s*bytes\s+(\d+)-\d+\/(\d+)/i', $headers, $matches)) {
+                // Следующий байт для загрузки.
+                return (int) $matches[1] + 1;
+            }
+            // Нет заголовка — начинаем с нуля.
+            return 0;
+        }
+
+        if ($httpCode === 404) {
+            return 0;
+        }
+
+        $this->logger->error("Неожиданный ответ при проверке смещения: HTTP {$httpCode}");
+        return false;
+    }// end getResumableOffset()
 }// end class
