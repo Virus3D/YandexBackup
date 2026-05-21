@@ -13,8 +13,8 @@ class HttpClient
 
     // Порог, после которого переключаемся на составную загрузку (байты): 2 GiB.
     private const RESUMABLE_THRESHOLD = 2 * 1024 * 1024 * 1024;
-    // Размер одной части при составной загрузке (рекомендация Яндекса — кратно 4 MiB): 8 MiB.
-    private const CHUNK_SIZE = 8 * 1024 * 1024;
+    // Размер одной части при составной загрузке (рекомендация Яндекса — кратно 4 MiB): 32 MiB.
+    private const CHUNK_SIZE = 32 * 1024 * 1024;
     // Максимальное время для загрузки одной части (15 минут).
     private const CHUNK_TIMEOUT = 900;
     // Максимальное количество попыток для каждой части.
@@ -180,6 +180,10 @@ class HttpClient
                     'Content-Type: application/octet-stream',
                 ],
                 CURLOPT_TIMEOUT        => $timeout,
+                // Оптимизация TCP: отключаем алгоритм Нагла, уменьшаем задержку
+                CURLOPT_TCP_NODELAY   => true,
+                // Буфер для загрузки (по умолчанию 16384) можно увеличить
+                CURLOPT_BUFFERSIZE    => 256 * 1024,
             ]
         );
 
@@ -229,10 +233,11 @@ class HttpClient
 
             $this->logger->info(
                 sprintf(
-                    "Загрузка части %d/%d (bytes %s)...",
+                    "Загрузка части %d/%d (%s, %.1f МБ)...",
                     ++$chunkIndex,
                     $totalChunks,
-                    $rangeHeader
+                    $rangeHeader,
+                    $chunkSize / (1024 * 1024)
                 )
             );
 
@@ -261,6 +266,8 @@ class HttpClient
                             'Content-Range: ' . $rangeHeader,
                         ],
                         CURLOPT_TIMEOUT        => self::CHUNK_TIMEOUT,
+                        CURLOPT_TCP_NODELAY    => true,
+                        CURLOPT_BUFFERSIZE     => 256 * 1024,
                     ]
                 );
 
